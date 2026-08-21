@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">Redshift</string>
+    <string name="notification_channel">Screen schedule</string>
+    <string name="notification_title">Redshift is watching the clock</string>
+    <string name="notification_stop">Pause</string>
+</resources>

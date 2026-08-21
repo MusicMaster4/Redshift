@@ -1,0 +1,67 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Redshift",
+  "version": "1.0.0",
+  "identifier": "com.musicmaster4.redshift",
+  "build": {
+    "beforeDevCommand": "bun run dev",
+    "devUrl": "http://127.0.0.1:1420",
+    "beforeBuildCommand": "bun run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "create": false,
+        "title": "Redshift",
+        "width": 1260,
+        "height": 820,
+        "minWidth": 920,
+        "minHeight": 620,
+        "resizable": true,
+        "decorations": false,
+        "transparent": false,
+        "center": true,
+        "visible": true,
+        "backgroundColor": "#0b0b0e"
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis", "dmg"],
+    "createUpdaterArtifacts": true,
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "category": "Utility",
+    "shortDescription": "Schedule smooth screen color shifts.",
+    "longDescription": "Redshift changes screen color channels and tone on a schedule, with smooth fade-in and fade-out transitions.",
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser",
+        "installerIcon": "icons/icon.ico",
+        "displayLanguageSelector": false
+      }
+    }
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEU1QzYzRTMzOTYyQTNGQjgKUldTNFB5cVdNejdHNVpTQU5MdThjN3Jkd2pKMHduRmsxYXFEQnBhQUsxckZhVU1LcWVtdm03RjQK",
+      "endpoints": [
+        "https://github.com/MusicMaster4/Redshift/releases/latest/download/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
+      }
+    }
+  }
+}

@@ -1,0 +1,7 @@
+<resources>
+    <color name="redshift_background">#0B0B0E</color>
+    <color name="redshift_surface">#151519</color>
+    <color name="redshift_accent">#E64343</color>
+    <color name="redshift_text">#F3F1EE</color>
+    <color name="redshift_muted">#8D8B91</color>
+</resources>

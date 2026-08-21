@@ -1,0 +1,1 @@
+-keep class com.musicmaster4.redshift.mobile.** { *; }

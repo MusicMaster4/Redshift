@@ -1,0 +1,44 @@
+name: Bug report
+description: Report a reproducible problem in Redshift
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - Windows
+        - macOS
+        - Android
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Redshift version
+      placeholder: 1.0.0 or 1.0.1-testing.1
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What happened?
+      description: Include the schedule times and whether the computer had just resumed from sleep.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Create a scene...
+        2. Enable the schedule...
+        3. Observe...
+    validations:
+      required: true
+  - type: textarea
+    id: display
+    attributes:
+      label: Display setup
+      description: Number of displays, HDR state, and GPU or device model if relevant. Do not include personal data.
