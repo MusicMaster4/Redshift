@@ -77,7 +77,7 @@ impl Engine {
     }
 
     fn run(&self) {
-        let mut last_applied: Option<(ScreenEffect, i32)> = None;
+        let mut last_applied: Option<(Option<(ScreenEffect, i32)>, ScreenEffect, i32, i32)> = None;
         let mut last_refresh = Instant::now() - Duration::from_secs(61);
         let mut display_count = 0;
         let mut was_active = false;
@@ -109,40 +109,77 @@ impl Engine {
                 })
             };
             let settings = self.settings();
+            let scheduled = settings
+                .enabled
+                .then(|| schedule::evaluate(&settings, Local::now()))
+                .flatten();
 
-            let active = if let Some((schedule, intensity, seconds_left)) = preview {
+            let active = if let Some((schedule, intensity, seconds_left)) = &preview {
                 Some((
                     EnginePhase::Preview,
-                    schedule.id,
-                    schedule.name,
+                    schedule.id.clone(),
+                    schedule.name.clone(),
                     schedule.effect.normalized(),
-                    intensity,
+                    *intensity,
                     None,
-                    Some(seconds_left),
+                    Some(*seconds_left),
                 ))
-            } else if settings.enabled {
-                schedule::evaluate(&settings, Local::now()).map(|scene| {
+            } else {
+                scheduled.as_ref().map(|scene| {
                     (
-                        scene.phase,
-                        scene.id,
-                        scene.name,
-                        scene.effect,
+                        scene.phase.clone(),
+                        scene.id.clone(),
+                        scene.name.clone(),
+                        scene.effect.clone(),
                         scene.intensity,
-                        Some(scene.next_change),
+                        Some(scene.next_change.clone()),
                         None,
                     )
                 })
+            };
+
+            let display_frame = if let Some((preview_schedule, progress, _)) = &preview {
+                // Crossfade from the schedule that is genuinely active now. Starting a preview
+                // from an identity frame would briefly clear an existing effect and look like a
+                // flash; using the live schedule also returns to the right point after fade-out.
+                Some((
+                    scheduled
+                        .as_ref()
+                        .map(|scene| (scene.effect.clone(), scene.intensity)),
+                    preview_schedule.effect.normalized(),
+                    1.0_f32,
+                    *progress,
+                ))
             } else {
-                None
+                scheduled
+                    .as_ref()
+                    .map(|scene| (None, scene.effect.clone(), scene.intensity, 1.0_f32))
             };
 
             let mut message = None;
-            if let Some((_, _, _, effect, intensity, _, _)) = &active {
-                let quantized = (*intensity * 1000.0).round() as i32;
-                let changed = last_applied.as_ref() != Some(&(effect.clone(), quantized));
+            if let Some((from, to_effect, to_intensity, progress)) = &display_frame {
+                let key = (
+                    from.as_ref().map(|(effect, intensity)| {
+                        (effect.clone(), (intensity * 1000.0).round() as i32)
+                    }),
+                    to_effect.clone(),
+                    (to_intensity * 1000.0).round() as i32,
+                    (progress * 1000.0).round() as i32,
+                );
+                let changed = last_applied.as_ref() != Some(&key);
                 if changed || force_refresh || last_refresh.elapsed() >= Duration::from_secs(60) {
                     if display::supported() {
-                        match display::apply(effect, *intensity) {
+                        let result = if from.is_some() || *progress < 1.0 {
+                            display::apply_transition(
+                                from.as_ref()
+                                    .map(|(effect, intensity)| (effect, *intensity)),
+                                (to_effect, *to_intensity),
+                                *progress,
+                            )
+                        } else {
+                            display::apply(to_effect, *to_intensity)
+                        };
+                        match result {
                             Ok(count) => {
                                 display_count = count;
                                 was_active = true;
@@ -154,7 +191,7 @@ impl Engine {
                             "System-wide color control is available on Windows and macOS.".into(),
                         );
                     }
-                    last_applied = Some((effect.clone(), quantized));
+                    last_applied = Some(key);
                     last_refresh = Instant::now();
                 }
             } else {

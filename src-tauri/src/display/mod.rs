@@ -18,6 +18,14 @@ pub fn apply(effect: &ScreenEffect, intensity: f32) -> Result<usize, String> {
     platform::apply(effect, intensity)
 }
 
+pub fn apply_transition(
+    from: Option<(&ScreenEffect, f32)>,
+    to: (&ScreenEffect, f32),
+    progress: f32,
+) -> Result<usize, String> {
+    platform::apply_transition(from, to, progress)
+}
+
 pub fn restore() -> Result<(), String> {
     platform::restore()
 }
@@ -73,19 +81,33 @@ pub(crate) fn transform_sample(
     (sample + (target - sample) * master).clamp(0.0, 1.0)
 }
 
+#[cfg(test)]
 pub(crate) fn build_u16_ramp(
     original: &[[u16; 256]; 3],
     effect: &ScreenEffect,
     intensity: f32,
 ) -> [[u16; 256]; 3] {
+    build_u16_transition_ramp(original, None, (effect, intensity), 1.0)
+}
+
+pub(crate) fn build_u16_transition_ramp(
+    original: &[[u16; 256]; 3],
+    from: Option<(&ScreenEffect, f32)>,
+    to: (&ScreenEffect, f32),
+    progress: f32,
+) -> [[u16; 256]; 3] {
     let mut result = [[0_u16; 256]; 3];
+    let progress = progress.clamp(0.0, 1.0);
     for channel in 0..3 {
         let mut previous = 0_u16;
         for index in 0..256 {
             let sample = original[channel][index] as f32 / u16::MAX as f32;
-            let transformed = (transform_sample(sample, effect, intensity, channel)
-                * u16::MAX as f32)
-                .round() as u16;
+            let from_value = from.map_or(sample, |(effect, intensity)| {
+                transform_sample(sample, effect, intensity, channel)
+            });
+            let to_value = transform_sample(sample, to.0, to.1, channel);
+            let blended = from_value + (to_value - from_value) * progress;
+            let transformed = (blended * u16::MAX as f32).round() as u16;
             let monotonic = transformed.max(previous);
             result[channel][index] = monotonic;
             previous = monotonic;
@@ -143,5 +165,25 @@ mod tests {
         for channel in ramp {
             assert!(channel.windows(2).all(|pair| pair[0] <= pair[1]));
         }
+    }
+
+    #[test]
+    fn transition_keeps_exact_endpoints() {
+        let original = identity();
+        let from = ScreenEffect::default();
+        let to = ScreenEffect {
+            red: 100,
+            green: 0,
+            blue: 0,
+            ..ScreenEffect::default()
+        };
+        assert_eq!(
+            build_u16_transition_ramp(&original, Some((&from, 0.45)), (&to, 1.0), 0.0),
+            build_u16_ramp(&original, &from, 0.45)
+        );
+        assert_eq!(
+            build_u16_transition_ramp(&original, Some((&from, 0.45)), (&to, 1.0), 1.0),
+            build_u16_ramp(&original, &to, 1.0)
+        );
     }
 }

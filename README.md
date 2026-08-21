@@ -48,10 +48,10 @@ Schedules may cross midnight and can repeat on any combination of weekdays. Over
 
 ## Platform behavior
 
-| Platform | Display method                                                                           | Background behavior                                                                             |
-| -------- | ---------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| Windows  | Per-display gamma ramps, with the Windows full-screen color matrix as a driver fallback. | Native tray process launched with `--hidden`. No WebView is created until the window is opened. |
-| macOS    | Per-display CoreGraphics transfer tables.                                                | LaunchAgent starts the native engine after sign-in.                                             |
+| Platform | Display method                                                                                    | Background behavior                                                                             |
+| -------- | ------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| Windows  | Full-screen color matrix for live transitions, with per-display gamma ramps as a driver fallback. | Native tray process launched with `--hidden`. No WebView is created until the window is opened. |
+| macOS    | Per-display CoreGraphics transfer tables.                                                         | LaunchAgent starts the native engine after sign-in.                                             |
 
 ## Updates and release branches
 

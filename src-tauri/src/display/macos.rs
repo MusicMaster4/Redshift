@@ -108,6 +108,29 @@ fn transformed(
         .collect()
 }
 
+fn transformed_transition(
+    original: &[f32],
+    from: Option<(&ScreenEffect, f32)>,
+    to: (&ScreenEffect, f32),
+    progress: f32,
+    channel: usize,
+) -> Vec<f32> {
+    let mut previous = 0.0_f32;
+    let progress = progress.clamp(0.0, 1.0);
+    original
+        .iter()
+        .map(|sample| {
+            let from_value = from.map_or(*sample, |(effect, intensity)| {
+                transform_sample(*sample, effect, intensity, channel)
+            });
+            let to_value = transform_sample(*sample, to.0, to.1, channel);
+            let value = (from_value + (to_value - from_value) * progress).max(previous);
+            previous = value;
+            value
+        })
+        .collect()
+}
+
 fn set_table(
     display: &CapturedDisplay,
     effect: &ScreenEffect,
@@ -116,6 +139,34 @@ fn set_table(
     let red = transformed(&display.red, effect, intensity, 0);
     let green = transformed(&display.green, effect, intensity, 1);
     let blue = transformed(&display.blue, effect, intensity, 2);
+    let error = unsafe {
+        CGSetDisplayTransferByTable(
+            display.id,
+            red.len() as u32,
+            red.as_ptr(),
+            green.as_ptr(),
+            blue.as_ptr(),
+        )
+    };
+    if error == CG_SUCCESS {
+        Ok(())
+    } else {
+        Err(format!(
+            "macOS refused the color table for display {} (CoreGraphics error {error})",
+            display.id
+        ))
+    }
+}
+
+fn set_transition_table(
+    display: &CapturedDisplay,
+    from: Option<(&ScreenEffect, f32)>,
+    to: (&ScreenEffect, f32),
+    progress: f32,
+) -> Result<(), String> {
+    let red = transformed_transition(&display.red, from, to, progress, 0);
+    let green = transformed_transition(&display.green, from, to, progress, 1);
+    let blue = transformed_transition(&display.blue, from, to, progress, 2);
     let error = unsafe {
         CGSetDisplayTransferByTable(
             display.id,
@@ -170,6 +221,29 @@ pub fn apply(effect: &ScreenEffect, intensity: f32) -> Result<usize, String> {
         .filter(|display| online.contains(&display.id))
     {
         set_table(display, effect, intensity)?;
+    }
+    Ok(online.len())
+}
+
+pub fn apply_transition(
+    from: Option<(&ScreenEffect, f32)>,
+    to: (&ScreenEffect, f32),
+    progress: f32,
+) -> Result<usize, String> {
+    let online = online_displays()?;
+    let mut captured = displays()
+        .lock()
+        .map_err(|_| "The display controller lock was poisoned".to_string())?;
+    for id in &online {
+        if !captured.iter().any(|display| display.id == *id) {
+            captured.push(capture(*id)?);
+        }
+    }
+    for display in captured
+        .iter()
+        .filter(|display| online.contains(&display.id))
+    {
+        set_transition_table(display, from, to, progress)?;
     }
     Ok(online.len())
 }

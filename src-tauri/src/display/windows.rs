@@ -7,7 +7,7 @@ use std::{
 
 use crate::model::ScreenEffect;
 
-use super::build_u16_ramp;
+use super::build_u16_transition_ramp;
 
 const DISPLAY_DEVICE_ATTACHED_TO_DESKTOP: u32 = 0x0000_0001;
 const DISPLAY_DEVICE_MIRRORING_DRIVER: u32 = 0x0000_0008;
@@ -46,7 +46,7 @@ impl GammaRamp {
 }
 
 #[repr(C)]
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 struct MagColorEffect {
     transform: [[f32; 5]; 5],
 }
@@ -262,13 +262,34 @@ fn linear_matrix(effect: &ScreenEffect, intensity: f32) -> MagColorEffect {
     matrix
 }
 
+fn transition_matrix(
+    from: Option<(&ScreenEffect, f32)>,
+    to: (&ScreenEffect, f32),
+    progress: f32,
+) -> MagColorEffect {
+    let from = from.map_or_else(identity_matrix, |(effect, intensity)| {
+        linear_matrix(effect, intensity)
+    });
+    let to = linear_matrix(to.0, to.1);
+    let progress = progress.clamp(0.0, 1.0);
+    let mut result = identity_matrix();
+    for row in 0..5 {
+        for column in 0..5 {
+            result.transform[row][column] = from.transform[row][column]
+                + (to.transform[row][column] - from.transform[row][column]) * progress;
+        }
+    }
+    result
+}
+
 fn apply_magnification(
     state: &mut PlatformState,
-    effect: &ScreenEffect,
-    intensity: f32,
+    from: Option<(&ScreenEffect, f32)>,
+    to: (&ScreenEffect, f32),
+    progress: f32,
 ) -> Result<(), String> {
     initialize_magnification(state)?;
-    let matrix = linear_matrix(effect, intensity);
+    let matrix = transition_matrix(from, to, progress);
     if unsafe { MagSetFullscreenColorEffect(&matrix) } == 0 {
         return Err(last_error("Windows refused the full-screen color filter"));
     }
@@ -276,17 +297,27 @@ fn apply_magnification(
     Ok(())
 }
 
-fn switch_to_magnification(
-    state: &mut PlatformState,
-    effect: &ScreenEffect,
-    intensity: f32,
-) -> Result<(), String> {
-    restore_gamma(&state.displays);
-    state.displays.clear();
-    apply_magnification(state, effect, intensity)
+fn abandon_magnification(state: &mut PlatformState) {
+    if state.magnification_initialized {
+        if let Some(previous) = state.previous_magnification {
+            unsafe { MagSetFullscreenColorEffect(&previous) };
+        }
+        unsafe { MagUninitialize() };
+    }
+    state.previous_magnification = None;
+    state.magnification_initialized = false;
+    state.mode = Mode::None;
 }
 
 pub fn apply(effect: &ScreenEffect, intensity: f32) -> Result<usize, String> {
+    apply_transition(None, (effect, intensity), 1.0)
+}
+
+pub fn apply_transition(
+    from: Option<(&ScreenEffect, f32)>,
+    to: (&ScreenEffect, f32),
+    progress: f32,
+) -> Result<usize, String> {
     let names = active_displays();
     let display_count = names.len().max(1);
     let mut state = state()
@@ -294,8 +325,18 @@ pub fn apply(effect: &ScreenEffect, intensity: f32) -> Result<usize, String> {
         .map_err(|_| "The display controller lock was poisoned".to_string())?;
 
     if state.mode == Mode::Magnification {
-        apply_magnification(&mut state, effect, intensity)?;
+        apply_magnification(&mut state, from, to, progress)?;
         return Ok(display_count);
+    }
+
+    if state.mode == Mode::None {
+        // The full-screen matrix is safe to replace throughout an animation. Hardware gamma
+        // writes can block for a noticeable amount of time, so they remain a compatibility
+        // fallback instead of driving every preview frame.
+        if apply_magnification(&mut state, from, to, progress).is_ok() {
+            return Ok(display_count);
+        }
+        abandon_magnification(&mut state);
     }
 
     for name in &names {
@@ -307,31 +348,19 @@ pub fn apply(effect: &ScreenEffect, intensity: f32) -> Result<usize, String> {
                 name: name.clone(),
                 original,
             }),
-            Err(_) => {
-                switch_to_magnification(&mut state, effect, intensity)?;
-                return Ok(display_count);
-            }
+            Err(error) => return Err(error),
         }
     }
 
     if state.displays.is_empty() {
-        apply_magnification(&mut state, effect, intensity)?;
-        return Ok(display_count);
+        return Err("Windows could not find a controllable display".into());
     }
 
-    let mut failure = false;
     for display in &state.displays {
-        let channels = build_u16_ramp(&display.original.channels(), effect, intensity);
-        if write_gamma(&display.name, &GammaRamp::from_channels(channels)).is_err() {
-            failure = true;
-            break;
-        }
+        let channels = build_u16_transition_ramp(&display.original.channels(), from, to, progress);
+        write_gamma(&display.name, &GammaRamp::from_channels(channels))?;
     }
-    if failure {
-        switch_to_magnification(&mut state, effect, intensity)?;
-    } else {
-        state.mode = Mode::Gamma;
-    }
+    state.mode = Mode::Gamma;
     Ok(display_count)
 }
 
@@ -358,4 +387,28 @@ pub fn restore() -> Result<(), String> {
 
 fn last_error(context: &str) -> String {
     format!("{context}: {}", std::io::Error::last_os_error())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn animated_matrix_keeps_exact_endpoints() {
+        let from = ScreenEffect::default();
+        let to = ScreenEffect {
+            red: 100,
+            green: 0,
+            blue: 0,
+            ..ScreenEffect::default()
+        };
+        assert_eq!(
+            transition_matrix(Some((&from, 0.4)), (&to, 1.0), 0.0),
+            linear_matrix(&from, 0.4)
+        );
+        assert_eq!(
+            transition_matrix(Some((&from, 0.4)), (&to, 1.0), 1.0),
+            linear_matrix(&to, 1.0)
+        );
+    }
 }
