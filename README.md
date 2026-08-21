@@ -11,7 +11,7 @@
 <p align="center">
   <a href="https://github.com/MusicMaster4/Redshift/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/MusicMaster4/Redshift/actions/workflows/ci.yml/badge.svg"></a>
   <a href="https://github.com/MusicMaster4/Redshift/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/MusicMaster4/Redshift?display_name=tag&sort=semver"></a>
-  <a href="./LICENSE"><img alt="MIT license" src="https://img.shields.io/badge/license-MIT-30323a"></a>
+  <a href="./LICENSE"><img alt="PolyForm Noncommercial license" src="https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-30323a"></a>
 </p>
 
 Redshift changes the display according to four clock times: fade in, full effect, fade out, and off. Each scene has its own days, RGB channel limits, brightness, contrast, shadow detail, black point, temperature, and overall strength.
@@ -108,4 +108,4 @@ Schedules and display settings stay on the device. Redshift has no account, anal
 
 ## License
 
-[MIT](./LICENSE)
+Redshift is available under the [PolyForm Noncommercial License 1.0.0](./LICENSE). Personal, educational, research, charitable, and other noncommercial use is permitted. Commercial use, paid redistribution, resale, or use intended to generate revenue requires a separate commercial license from MusicMaster4.

@@ -2,6 +2,10 @@
 
 Bug reports and focused pull requests are welcome.
 
+## Target branch
+
+Open every pull request against `testing`, the beta branch. Do not target `main` directly. The `main` branch is reserved for stable releases and only receives changes promoted from `testing` by the maintainers.
+
 Before opening a pull request:
 
 1. Keep platform-specific display code inside `src-tauri/src/display`.
@@ -23,4 +27,4 @@ For Android changes, also run:
 ./android/gradlew -p android :app:testDebugUnitTest :app:assembleDebug
 ```
 
-Use `main` for stable work and `testing` for beta releases. Do not commit signing keys, passwords, generated bundles, or local settings.
+Do not commit signing keys, passwords, generated bundles, or local settings.

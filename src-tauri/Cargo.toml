@@ -2,6 +2,7 @@
 name = "redshift"
 version = "1.0.0"
 description = "A native screen color scheduler for Windows and macOS"
+license = "PolyForm-Noncommercial-1.0.0"
 edition = "2021"
 rust-version = "1.88"
 
