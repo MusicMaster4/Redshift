@@ -2,16 +2,11 @@ node_modules/
 dist/
 src-tauri/target/
 src-tauri/gen/
-android/.gradle/
-android/build/
-android/app/build/
-android-icon-build/
 *.jks
 *.keystore
 *.key
 *.password
 latest.json
-android-latest.json
 release-assets/
 .DS_Store
 Thumbs.db

@@ -21,10 +21,4 @@ cargo fmt --manifest-path src-tauri/Cargo.toml -- --check
 cargo test --locked --manifest-path src-tauri/Cargo.toml
 ```
 
-For Android changes, also run:
-
-```sh
-./android/gradlew -p android :app:testDebugUnitTest :app:assembleDebug
-```
-
 Do not commit signing keys, passwords, generated bundles, or local settings.
