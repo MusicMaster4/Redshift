@@ -183,15 +183,16 @@ jobs:
               cp "$INSTALLER" release-assets/redshift-setup.exe
             fi
           else
-            stage_files "$BUNDLE_DIR/dmg"
+            DMG_SOURCE="$(find "$BUNDLE_DIR/dmg" -maxdepth 1 -type f -name '*.dmg' -print -quit)"
+            test -n "$DMG_SOURCE"
+            cp "$DMG_SOURCE" release-assets/
             UPDATER="$(find "$BUNDLE_DIR/macos" -maxdepth 1 -type f -name '*.app.tar.gz' -print -quit)"
             test -n "$UPDATER"
             test -f "$UPDATER.sig"
             STAGED="release-assets/Redshift_${VERSION}_universal.app.tar.gz"
             cp "$UPDATER" "$STAGED"
             cp "$UPDATER.sig" "$STAGED.sig"
-            DMG="$(find release-assets -maxdepth 1 -type f -name '*.dmg' -print -quit)"
-            test -n "$DMG"
+            DMG="release-assets/$(basename "$DMG_SOURCE")"
             if [ "$CHANNEL" = "testing" ]; then
               cp "$DMG" release-assets/redshift-beta.dmg
             else
