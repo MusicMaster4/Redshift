@@ -55,7 +55,7 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEU1QzYzRTMzOTYyQTNGQjgKUldTNFB5cVdNejdHNVpTQU5MdThjN3Jkd2pKMHduRmsxYXFEQnBhQUsxckZhVU1LcWVtdm03RjQK",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEE1MjVDQjZEOEQ1MzMxNjUKUldSbE1WT05iY3NscFlyS1NsMTlKVi9rNFgyb2tpRDl5eU4yZ2ZjRFFON1J3dW92cFU3SXVEUy8K",
       "endpoints": [
         "https://github.com/MusicMaster4/Redshift/releases/latest/download/latest.json"
       ],
