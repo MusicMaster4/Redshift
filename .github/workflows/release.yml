@@ -68,10 +68,11 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: "1.3.8"
-      - run: bun install --frozen-lockfile
+      - run: bun install --frozen-lockfile --ignore-scripts
       - run: bun scripts/apply-version.mjs --version "${{ needs.version.outputs.version }}" --channel "${{ needs.version.outputs.channel }}" --repo "$GITHUB_REPOSITORY"
+      - run: bun audit
       - run: bun run typecheck
-      - run: bun test
+      - run: bun run test
       - run: bun run build
 
   desktop:
@@ -111,7 +112,7 @@ jobs:
         with:
           workspaces: src-tauri -> target
           key: release-${{ matrix.platform }}
-      - run: bun install --frozen-lockfile
+      - run: bun install --frozen-lockfile --ignore-scripts
       - name: Stamp version and update feed
         run: bun scripts/apply-version.mjs --version "${{ needs.version.outputs.version }}" --channel "${{ needs.version.outputs.channel }}" --repo "$GITHUB_REPOSITORY"
 
@@ -155,7 +156,7 @@ jobs:
           if [ -z "${APPLE_ID:-}" ] || [ -z "${APPLE_PASSWORD:-}" ] || [ -z "${APPLE_TEAM_ID:-}" ]; then
             unset APPLE_ID APPLE_PASSWORD APPLE_TEAM_ID || true
           fi
-          bun run tauri build --bundles "${{ matrix.bundles }}" ${{ matrix.target_args }}
+          bun run tauri build --bundles "${{ matrix.bundles }}" ${{ matrix.target_args }} -- --locked
 
       - name: Stage desktop assets
         env:

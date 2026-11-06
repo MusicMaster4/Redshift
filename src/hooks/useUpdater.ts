@@ -21,25 +21,36 @@ export function useUpdater() {
   const [status, setStatus] = useState<UpdateStatus>({ kind: "idle" });
   const statusRef = useRef(status);
   statusRef.current = status;
+  const checkingRef = useRef(false);
+
+  const changeStatus = useCallback((next: UpdateStatus) => {
+    statusRef.current = next;
+    setStatus(next);
+  }, []);
 
   useEffect(() => {
     if (!TAURI_RUNTIME) return;
-    void appVersion().then(setVersion);
+    void appVersion().then(setVersion).catch(() => { /* A failed version lookup must stay silent. */ });
   }, []);
 
   const runCheck = useCallback(async (quiet = false) => {
+    if (checkingRef.current || statusRef.current.kind === "installing") return;
     if (!TAURI_RUNTIME) {
-      if (!quiet) setStatus({ kind: "current" });
+      if (!quiet) changeStatus({ kind: "current" });
       return;
     }
-    if (!quiet) setStatus({ kind: "checking" });
+    checkingRef.current = true;
+    if (!quiet) changeStatus({ kind: "checking" });
     try {
       const update = await checkForUpdate();
-      setStatus(update ? { kind: "available", update } : { kind: "current" });
+      if (update) changeStatus({ kind: "available", update });
+      else if (!quiet) changeStatus({ kind: "current" });
     } catch (error) {
-      if (!quiet) setStatus({ kind: "failed", message: errorMessage(error) });
+      if (!quiet) changeStatus({ kind: "failed", message: errorMessage(error) });
+    } finally {
+      checkingRef.current = false;
     }
-  }, []);
+  }, [changeStatus]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void runCheck(true), 1600);
@@ -49,15 +60,15 @@ export function useUpdater() {
   const install = useCallback(async () => {
     const current = statusRef.current;
     if (current.kind !== "available") return;
-    setStatus({ kind: "installing", version: current.update.version, fraction: null });
+    changeStatus({ kind: "installing", version: current.update.version, fraction: null });
     try {
       await current.update.install((fraction) => {
         setStatus((previous) => previous.kind === "installing" ? { ...previous, fraction } : previous);
       });
     } catch (error) {
-      setStatus({ kind: "failed", message: errorMessage(error) });
+      changeStatus({ kind: "failed", message: errorMessage(error) });
     }
-  }, []);
+  }, [changeStatus]);
 
   return {
     version,
@@ -65,6 +76,8 @@ export function useUpdater() {
     status,
     check: () => void runCheck(false),
     install: () => void install(),
-    dismiss: () => setStatus({ kind: "idle" }),
+    dismiss: () => {
+      if (statusRef.current.kind !== "installing") changeStatus({ kind: "idle" });
+    },
   };
 }

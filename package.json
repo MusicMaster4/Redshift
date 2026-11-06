@@ -19,20 +19,25 @@
     "version:next": "bun scripts/release-version.mjs --dry-run"
   },
   "dependencies": {
-    "@tauri-apps/api": "^2.8.0",
+    "@tauri-apps/api": "^2.12.4",
     "@tauri-apps/plugin-process": "^2.3.1",
-    "@tauri-apps/plugin-updater": "^2.10.1",
+    "@tauri-apps/plugin-updater": "^2.14.1",
     "lucide-react": "^0.468.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "^2.8.0",
+    "@tauri-apps/cli": "^2.12.4",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
+    "@types/react-test-renderer": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.4",
+    "react-test-renderer": "18.3.1",
     "typescript": "^5.7.2",
-    "vite": "^6.0.5",
-    "vitest": "^2.1.8"
+    "vite": "^6.4.5",
+    "vitest": "^4.1.12"
+  },
+  "overrides": {
+    "source-map-js": "^1.2.2"
   }
 }

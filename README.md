@@ -66,7 +66,7 @@ The release workflow builds Windows x64 and a universal macOS app for Intel and 
 Desktop requirements:
 
 - [Bun](https://bun.sh/)
-- Rust 1.88 or newer
+- Rust 1.90 or newer
 - The platform prerequisites from the [Tauri setup guide](https://v2.tauri.app/start/prerequisites/)
 
 ```sh
@@ -84,7 +84,7 @@ bun run app:build
 
 ```sh
 bun run typecheck
-bun test
+bun run test
 cargo test --locked --manifest-path src-tauri/Cargo.toml
 ```
 
@@ -92,7 +92,7 @@ CI repeats these checks on Windows, macOS, and Ubuntu before a release is assemb
 
 ## Privacy
 
-Schedules and display settings stay on the device. Redshift has no account, analytics, advertisements, or telemetry. Network access is used only when you ask the app to check for an update.
+Schedules and display settings stay on the device. Redshift has no account, analytics, advertisements, or telemetry. The app quietly checks for updates when its window opens and also supports manual checks. Automatic checks show a dialog only when a newer version is available in the same channel.
 
 ## License
 

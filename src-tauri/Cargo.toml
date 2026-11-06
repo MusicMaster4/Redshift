@@ -4,7 +4,7 @@ version = "1.0.0"
 description = "A native screen color scheduler for Windows and macOS"
 license = "PolyForm-Noncommercial-1.0.0"
 edition = "2021"
-rust-version = "1.88"
+rust-version = "1.90"
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
@@ -14,7 +14,7 @@ tauri = { version = "2", features = ["tray-icon"] }
 tauri-plugin-autostart = "2"
 tauri-plugin-process = "2"
 tauri-plugin-single-instance = "2"
-tauri-plugin-updater = "2"
+tauri-plugin-updater = "2.14.1"
 chrono = { version = "0.4", default-features = false, features = ["clock", "std", "serde"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
